@@ -1,17 +1,18 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   User as UserIcon, Mail, Lock, Link as LinkIcon, Eye, EyeOff, Shield,
-  Ban, CreditCard, MapPin, ShoppingBag, LogOut, ChevronRight, RefreshCw, Copy, Check,
+  CreditCard, MapPin, ShoppingBag, LogOut, ChevronRight, RefreshCw, Copy, Check,
+  Download, Trash2,
 } from 'lucide-react';
 import {
-  authApi, profileApi, blockApi, useAuth, useDB,
+  authApi, profileApi, useAuth, useDB,
 } from '@/lib/store';
 import { Avatar } from '@/components/Avatar';
 import { Badge, Button, Card, Input, Textarea } from '@/components/ui';
 import { Modal, ConfirmDialog } from '@/components/Modal';
 import { useToast } from '@/components/Toast';
-import { formatDate, formatDKK } from '@/lib/constants';
+import { formatDate } from '@/lib/constants';
 
 export function ProfilePage() {
   const { user } = useAuth();
@@ -21,7 +22,6 @@ export function ProfilePage() {
   const [refreshing, setRefreshing] = useState(false);
   const [editing, setEditing] = useState<'personal' | 'email' | 'password' | null>(null);
   const [confirmSignOut, setConfirmSignOut] = useState(false);
-  const [unblockTarget, setUnblockTarget] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   if (!user) return null;
@@ -150,29 +150,6 @@ export function ProfilePage() {
         />
       </div>
 
-      {/* Blocked members */}
-      <div className="space-y-2">
-        <p className="text-xs font-semibold text-ink-muted uppercase tracking-wide px-1">
-          Blocked members
-        </p>
-        {db.blocks.length === 0 ? (
-          <Card className="p-4 text-sm text-ink-muted">No blocked members.</Card>
-        ) : (
-          db.blocks.map((b) => (
-            <Card key={b.id} className="p-3 flex items-center gap-3">
-              <Avatar name={b.blocked_name} src={b.blocked_avatar} size={36} />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-ink truncate">{b.blocked_name}</p>
-                <p className="text-xs text-ink-muted truncate">{b.blocked_email}</p>
-              </div>
-              <Button size="sm" variant="outline" onClick={() => setUnblockTarget(b.id)}>
-                Unblock
-              </Button>
-            </Card>
-          ))
-        )}
-      </div>
-
       {/* Menu items */}
       <div className="space-y-2">
         <p className="text-xs font-semibold text-ink-muted uppercase tracking-wide px-1">
@@ -202,6 +179,24 @@ export function ProfilePage() {
         />
       </div>
 
+      {/* Data & Account actions */}
+      <div className="space-y-2">
+        <Button
+          variant="outline"
+          className="w-full"
+          type="button"
+        >
+          <Download size={16} /> Export Data
+        </Button>
+        <Button
+          variant="outline"
+          className="w-full !text-danger !border-danger/30 hover:!bg-danger/5"
+          type="button"
+        >
+          <Trash2 size={16} /> Delete Account
+        </Button>
+      </div>
+
       {/* Sign out */}
       <Button
         variant="ghost"
@@ -218,20 +213,6 @@ export function ProfilePage() {
       />
       <EmailModal open={editing === 'email'} onClose={() => setEditing(null)} />
       <PasswordModal open={editing === 'password'} onClose={() => setEditing(null)} />
-
-      <ConfirmDialog
-        open={!!unblockTarget}
-        onClose={() => setUnblockTarget(null)}
-        onConfirm={() => {
-          if (unblockTarget) {
-            blockApi.unblock(unblockTarget);
-            toast('Member unblocked.', 'success');
-          }
-        }}
-        title="Unblock member"
-        message="They will be able to view your public profile and contact you again."
-        confirmLabel="Unblock"
-      />
 
       <ConfirmDialog
         open={confirmSignOut}
